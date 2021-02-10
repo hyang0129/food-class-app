@@ -12,25 +12,58 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# [START gae_python38_render_template]
-# [START gae_python3_render_template]
-import datetime
 
-from flask import Flask, render_template
+import json
+import logging
+import os
+
+from flask import Flask, request
+import tensorflow as tf
+from google.cloud import storage
+
+MODEL_BUCKET = os.environ['MODEL_BUCKET']
+MODEL_FILENAME = os.environ['MODEL_FILENAME']
+MODEL = None
 
 app = Flask(__name__)
 
+@app.before_first_request
+def _load_model():
+    global MODEL
+    # client = storage.Client()
+    # bucket = client.get_bucket(MODEL_BUCKET)
+    # blob = bucket.get_blob(MODEL_FILENAME)
+    #
+    # blob.download_to_filename('model.h5')
+    #
+    # MODEL = tf.keras.models.load_model('model.h5', compile = False)
+
+    MODEL = None
 
 @app.route('/')
 def root():
-    # For the sake of example, use static information to inflate the template.
-    # This will be replaced with real information in later steps.
-    dummy_times = [datetime.datetime(2018, 1, 1, 10, 0, 0),
-                   datetime.datetime(2018, 1, 2, 10, 30, 0),
-                   datetime.datetime(2018, 1, 3, 11, 0, 0),
-                   ]
+    hello = tf.constant('This web address should only be accessed via the app and not directly')
+    return hello.numpy()
 
-    return render_template('index.html', times=dummy_times)
+@app.route('/', methods=['GET'])
+def index():
+    global MODEL
+    return str(MODEL), 200
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    global MODEL
+    X = request.get_json()['X']
+    y = MODEL.predict(X).tolist()
+    return json.dumps({'y': y}), 200
+
+@app.errorhandler(500)
+def server_error(e):
+    logging.exception('An error occurred during a request.')
+    return """
+    An internal error occurred: <pre>{}</pre>
+    See logs for full stacktrace.
+    """.format(e), 500
 
 
 if __name__ == '__main__':

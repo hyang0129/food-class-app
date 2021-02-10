@@ -1,4 +1,9 @@
-runtime: python39
+runtime: python38
+
+entrypoint: gunicorn -b :$PORT main:app
+
+automatic_scaling:
+  max_instances: 1
 
 handlers:
   # This configures Google App Engine to serve the files in the app's static
@@ -11,3 +16,8 @@ handlers:
   # the entire handlers section) when there are no static files defined.
 - url: /.*
   script: auto
+
+env_variables:
+    # The app will look for the model file at: gs://MODEL_BUCKET/MODEL_FILENAME
+    MODEL_BUCKET: BUCKET_NAME
+    MODEL_FILENAME: lr.pkl

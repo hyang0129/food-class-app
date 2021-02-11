@@ -12,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import main
+import requests
+import tensorflow as tf
 
 
-def test_index():
-    main.app.testing = True
-    client = main.app.test_client()
+image_bytes = tf.io.encode_jpeg(tf.zeros((256, 256, 3), dtype=tf.uint8))
 
-    r = client.get('/')
-    assert r.status_code == 200
+# r = requests.get('http://127.0.0.1:8080/check_model')
+
+r = requests.post('http://127.0.0.1:8080/predict', json=({'image_bytes': str(image_bytes.numpy())}))
+
+print(r.json())

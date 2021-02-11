@@ -17,12 +17,13 @@ import json
 import logging
 import os
 
-from flask import Flask, request
+from flask import Flask, request, jsonify
 import tensorflow as tf
 from google.cloud import storage
 
-MODEL_BUCKET = os.environ['MODEL_BUCKET']
-MODEL_FILENAME = os.environ['MODEL_FILENAME']
+
+MODEL_BUCKET = None
+MODEL_FILENAME = None
 MODEL = None
 
 app = Flask(__name__)
@@ -38,24 +39,32 @@ def _load_model():
     #
     # MODEL = tf.keras.models.load_model('model.h5', compile = False)
 
-    MODEL = None
+    MODEL = tf.keras.applications.EfficientNetB4(input_shape=(256,256,3),
+                                                 weights=None,
+                                                 classes=101)
+
 
 @app.route('/')
 def root():
     hello = tf.constant('This web address should only be accessed via the app and not directly')
     return hello.numpy()
 
-@app.route('/', methods=['GET'])
+@app.route('/check_model', methods=['GET'])
 def index():
     global MODEL
-    return str(MODEL), 200
+    return str(MODEL.name), 200
 
 @app.route('/predict', methods=['POST'])
 def predict():
     global MODEL
-    X = request.get_json()['X']
-    y = MODEL.predict(X).tolist()
-    return json.dumps({'y': y}), 200
+    b = request.get_json()['image_bytes']
+    b = eval(b)
+    image = tf.io.decode_jpeg(tf.cast(b, tf.string))
+    image = tf.cast(image, 'float32')/255.
+    image = tf.image.resize_with_crop_or_pad(image, target_height=256, target_width=256)
+    image = tf.reshape(image, (1, 256, 256, 3))
+    label = MODEL.predict(image).tolist()
+    return jsonify({'label': label}), 200
 
 @app.errorhandler(500)
 def server_error(e):

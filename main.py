@@ -13,17 +13,40 @@
 # limitations under the License.
 
 
-import json
-import logging
-import os
-
+import sys
+from loguru import logger
 from flask import Flask, request, jsonify
 import tensorflow as tf
-from google.cloud import storage
+# Imports the Cloud Logging client library
+import google.cloud.logging
+from google.auth.exceptions import DefaultCredentialsError
+
+from src import get_model, predict_image
+
+try:
+    client = google.cloud.logging.Client()
+    client.get_default_handler()
+    client.setup_logging()
+    logger.add(sys.stderr,
+               format="{level} {message}",
+               level="INFO",
+               backtrace=True,
+               diagnose=True,)
+except DefaultCredentialsError:
+    logger.add("server.log",
+               rotation="50 MB",
+               backtrace=True,
+               diagnose=True,
+               format="{time:YYYY-MM-DD at HH:mm:ss} | {level} | {message}")
+    logger.add(sys.stderr,
+               format="{time} {level} {message}",
+               level="INFO",
+               backtrace=True,
+               diagnose=True,)
 
 
-MODEL_BUCKET = None
-MODEL_FILENAME = None
+MODEL_BUCKET = 'kaggledata2'
+MODEL_FILENAME = 'foodclass/model.h5'
 MODEL = None
 
 app = Flask(__name__)
@@ -31,18 +54,8 @@ app = Flask(__name__)
 @app.before_first_request
 def _load_model():
     global MODEL
-    # client = storage.Client()
-    # bucket = client.get_bucket(MODEL_BUCKET)
-    # blob = bucket.get_blob(MODEL_FILENAME)
-    #
-    # blob.download_to_filename('model.h5')
-    #
-    # MODEL = tf.keras.models.load_model('model.h5', compile = False)
-
-    MODEL = tf.keras.applications.EfficientNetB4(input_shape=(256,256,3),
-                                                 weights=None,
-                                                 classes=101)
-
+    MODEL = get_model(MODEL_BUCKET, MODEL_FILENAME)
+    logger.debug('successfully loaded model')
 
 @app.route('/')
 def root():
@@ -57,18 +70,15 @@ def index():
 @app.route('/predict', methods=['POST'])
 def predict():
     global MODEL
-    b = request.get_json()['image_bytes']
-    b = eval(b)
-    image = tf.io.decode_jpeg(tf.cast(b, tf.string))
-    image = tf.cast(image, 'float32')/255.
-    image = tf.image.resize_with_crop_or_pad(image, target_height=256, target_width=256)
-    image = tf.reshape(image, (1, 256, 256, 3))
-    label = MODEL.predict(image).tolist()
+    logger.debug('receiving prediction request')
+    jpegbytes = request.get_json()['image_bytes']
+    jpegbytes = eval(jpegbytes)
+    label = predict_image(MODEL, jpegbytes)
     return jsonify({'label': label}), 200
 
 @app.errorhandler(500)
-def server_error(e):
-    logging.exception('An error occurred during a request.')
+def server_eerror(e):
+    logger.exception('An error occurred during a request.')
     return """
     An internal error occurred: <pre>{}</pre>
     See logs for full stacktrace.
@@ -77,7 +87,7 @@ def server_error(e):
 
 if __name__ == '__main__':
     # This is used when running locally only. When deploying to Google App
-    # Engine, a webserver process such as Gunicorn will serve the app. This
+    # Engine, a webserver Yprocess such as Gunicorn will serve the app. This
     # can be configured by adding an `entrypoint` to app.yaml.
     # Flask's development server will automatically serve static files in
     # the "static" directory. See:

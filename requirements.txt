@@ -1,4 +1,7 @@
 Flask==1.1.2
 tensorflow==2.4.0
 google-cloud-storage>=1.2.0
+google-cloud-logging
 gunicorn>=19.7.1
+loguru
+efficientnet

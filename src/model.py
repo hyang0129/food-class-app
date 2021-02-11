@@ -24,10 +24,10 @@ def get_model(MODEL_BUCKET, MODEL_FILENAME):
             client = storage.Client()
             bucket = client.get_bucket(MODEL_BUCKET)
             blob = bucket.get_blob(MODEL_FILENAME)
-            blob.download_to_filename('model.h5')
+            blob.download_to_filename('/tmp/model.h5')
 
             logger.debug('loading model')
-            MODEL = tf.keras.models.load_model('model.h5', compile=False)
+            MODEL = tf.keras.models.load_model('/tmp/model.h5', compile=False)
 
     except:
 

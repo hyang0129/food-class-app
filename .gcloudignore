@@ -19,3 +19,4 @@ __pycache__/
 /setup.cfg
 venv/
 android/
+server.log

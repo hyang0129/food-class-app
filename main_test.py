@@ -14,14 +14,17 @@
 
 import requests
 import tensorflow as tf
+import base64
 
+# image_bytes = tf.io.encode_jpeg(tf.zeros((256, 256, 3), dtype=tf.uint8))
 
-image_bytes = tf.io.encode_jpeg(tf.zeros((256, 256, 3), dtype=tf.uint8))
+image_bytes = tf.io.read_file('dumplings.jpg')
+
 
 # r = requests.get('http://127.0.0.1:8080/check_model')
 url = 'http://127.0.0.1:8080/predict'
-url = 'https://tpu-44747.uc.r.appspot.com/predict'
-r = requests.post(url, json=({'image_bytes': str(image_bytes.numpy())}))
-
+# url = 'https://tpu-44747.uc.r.appspot.com/predict'
+r = requests.post(url, json=({'image_bytes': base64.b64encode(image_bytes.numpy()).decode('ascii')}))
+#
 print(r.status_code)
 print(r.json())

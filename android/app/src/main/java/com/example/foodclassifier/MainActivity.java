@@ -9,9 +9,11 @@ import android.os.Bundle;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
+import com.android.volley.TimeoutError;
 import com.android.volley.VolleyError;
 import com.android.volley.VolleyLog;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
@@ -45,7 +47,9 @@ public class MainActivity extends AppCompatActivity {
     private TextView textView;
     private static final int Image_Capture_Code = 1;
     private Bitmap bp;
-     private String url = "https://tpu-44747.uc.r.appspot.com/predict";
+    private String url = "https://tpu-44747.uc.r.appspot.com/predict";
+    private String urlwarmup = "https://tpu-44747.uc.r.appspot.com";
+    private Integer warmupTries = 0;
 //    private String url = "http://10.0.2.2:8080/predict";
 
     private RequestQueue mRequestQueue;
@@ -68,9 +72,37 @@ public class MainActivity extends AppCompatActivity {
         );
         mRequestQueue = Volley.newRequestQueue(getApplicationContext());
 
+        textView.setText("Warming Up");
+
+        warmUp();
 
         }
 
+    public void warmUp(){
+        StringRequest stringRequest = new StringRequest
+                (Request.Method.GET, urlwarmup,  new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        textView.setText("Ready");
+                    }
+                }, new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        if (error instanceof TimeoutError && warmupTries < 10) {
+                            // note : may cause recursive invoke if always timeout.
+                            textView.setText("Warming Up");
+                            warmUp();
+                            ++warmupTries;
+                        } else {
+                            textView.setText("Server Error");
+                        }
+
+                    }
+                });
+
+        mRequestQueue.add(stringRequest) ;
+    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -103,8 +135,6 @@ public class MainActivity extends AppCompatActivity {
                             @Override
                             public void onErrorResponse(VolleyError error) {
                                 textView.setText("Server Error, Try Again");
-                                //VolleyLog.e("Error: ", error.getMessage());
-                                //Log.i("error",  error.getMessage());
                             }
                         });
 

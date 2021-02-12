@@ -17,7 +17,6 @@ import sys
 from loguru import logger
 from flask import Flask, request, jsonify
 import tensorflow as tf
-# Imports the Cloud Logging client library
 import google.cloud.logging
 from google.auth.exceptions import DefaultCredentialsError
 import base64
@@ -46,8 +45,9 @@ except DefaultCredentialsError:
 
 
 MODEL_BUCKET = 'kaggledata2'
-# MODEL_BUCKET = None
-MODEL_FILENAME = 'foodclass/model.h5'
+
+# MODEL_FILENAME = 'foodclass/model.h5'
+MODEL_FILENAME = 'foodclass/fp16.tflite'
 MODEL = None
 
 app = Flask(__name__)
@@ -74,7 +74,6 @@ def predict():
     logger.debug('receiving prediction request')
     jpegbytes = request.get_json()['image_bytes']
 
-    # jpegbytes = eval(jpegbytes)
     jpegbytes = base64.b64decode(jpegbytes)
     print(jpegbytes[:5])
     label = predict_image(MODEL, jpegbytes)

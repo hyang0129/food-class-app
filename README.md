@@ -51,6 +51,14 @@ examples, even though its primary use is for class imbalance https://arxiv.org/a
 
 ### Server Component 
 
+Priority: Low Cost, Quick Scaling 
+
+TFLite was used for quantization of the trained model. Reducing the model footprint
+improves the time to start a new instance. To minimize cost, instances are only
+active when requests come in, thus it is important to quickly spin up instances 
+on the fly. Google App Engine allows for low cost instance management that scales
+automatically.  
+
 ### App Component 
 
 

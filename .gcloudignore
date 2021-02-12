@@ -20,3 +20,6 @@ __pycache__/
 venv/
 android/
 server.log
+*.jpg
+*.h5
+*.tflite

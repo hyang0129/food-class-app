@@ -6,11 +6,6 @@ from google.cloud import storage
 import efficientnet.tfkeras as efn
 from src.class_names import class_names
 
-mean = [103.939, 116.779, 123.68]
-std = [58.393, 57.12, 57.375]
-
-
-
 
 def get_model(MODEL_BUCKET, MODEL_FILENAME):
 
@@ -26,18 +21,43 @@ def get_model(MODEL_BUCKET, MODEL_FILENAME):
 
             logger.debug('loaded dummy model')
         else:
+
+
             logger.debug('downloading model file')
-            client = storage.Client()
+            client = storage.Client.create_anonymous_client()
             bucket = client.get_bucket(MODEL_BUCKET)
             blob = bucket.get_blob(MODEL_FILENAME)
-            blob.download_to_filename('/tmp/model.h5')
 
-            logger.debug('loading model')
-            MODEL = tf.keras.models.load_model('/tmp/model.h5', compile=False)
+
+            if '.h5' in MODEL_FILENAME:
+                try:
+                    path = '/tmp/model.h5'
+                    blob.download_to_filename(path)
+                except FileNotFoundError:
+                    path = 'model.h5'
+                    blob.download_to_filename(path)
+
+                logger.debug('loading model')
+                MODEL = tf.keras.models.load_model(path, compile=False)
+
+            elif '.tflite' in MODEL_FILENAME:
+                try:
+                    path = '/tmp/model.tflite'
+                    blob.download_to_filename(path)
+                except FileNotFoundError:
+                    path = 'model.tflite'
+                    blob.download_to_filename(path)
+
+                logger.debug('loading tflite model')
+
+                interpreter = tf.lite.Interpreter(model_path=path)
+                interpreter.allocate_tensors()
+
+                MODEL = interpreter
 
     except:
 
-        pass
+        raise
 
     return MODEL
 
@@ -49,20 +69,28 @@ def predict_image(MODEL, jpegbytes):
 
         image = tf.cast(image, tf.float32)
 
-        image = image - mean
-        image = image - std
-
         image = image / 255.
 
-        image = tf.image.resize_with_crop_or_pad(image, target_height=256, target_width=256)
+        image = tf.image.resize_with_pad(image, target_height=256, target_width=256)
         image = tf.reshape(image, (1, 256, 256, 3))
 
         logger.debug('predicting on prepared data')
-        pred = MODEL.predict(image)
-        try:
-            pred = pred['label']
-        except:
-            pass
+
+        if MODEL.__class__ == tf.lite.Interpreter:
+            input_index = MODEL.get_input_details()[0]["index"]
+            output_index = MODEL.get_output_details()[0]["index"]
+
+            MODEL.set_tensor(input_index, image)
+            MODEL.invoke()
+            pred = MODEL.get_tensor(output_index)
+
+        else:
+            pred = MODEL.predict(image)
+            try:
+                pred = pred['label']
+            except:
+                pass
+
         label_id = tf.argmax(pred, axis=-1).numpy()[0]
         label = class_names[label_id]
 

@@ -20,7 +20,7 @@ import tensorflow as tf
 # Imports the Cloud Logging client library
 import google.cloud.logging
 from google.auth.exceptions import DefaultCredentialsError
-
+import base64
 from src import get_model, predict_image
 
 try:
@@ -46,6 +46,7 @@ except DefaultCredentialsError:
 
 
 MODEL_BUCKET = 'kaggledata2'
+# MODEL_BUCKET = None
 MODEL_FILENAME = 'foodclass/model.h5'
 MODEL = None
 
@@ -72,9 +73,13 @@ def predict():
     global MODEL
     logger.debug('receiving prediction request')
     jpegbytes = request.get_json()['image_bytes']
-    jpegbytes = eval(jpegbytes)
+
+    # jpegbytes = eval(jpegbytes)
+    jpegbytes = base64.b64decode(jpegbytes)
+    print(jpegbytes[:5])
     label = predict_image(MODEL, jpegbytes)
     return jsonify({'label': label}), 200
+    # return label, 200
 
 @app.errorhandler(500)
 def server_eerror(e):

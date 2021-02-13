@@ -1,4 +1,4 @@
-package com.example.foodclassifier;
+package com.foodclass.foodclassifier;
 
 import org.junit.Test;
 

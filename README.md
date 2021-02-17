@@ -2,10 +2,8 @@
 
 ## Overview 
 
-<img src="appdemo.gif">
+<img src="appdemo.gif" align="right">
 
-
-![](appdemo.gif)
 
 This android app classifies food into one of 101 categories using a cloud compute architecture.
 

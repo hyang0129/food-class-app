@@ -1,6 +1,8 @@
 <img src="logo.jpg" align="right" height=125 width=125>
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+![](https://img.shields.io/github/languages/code-size/hyang0129/food-class-app)
+![](https://img.shields.io/github/last-commit/hyang0129/food-class-app)
 
 # Food Classifier 
 
@@ -98,7 +100,11 @@ tutorial.
 3. Use gcloud app deploy command via the terminal. 
 
 For the android app component, follow the standard steps for a gradle build, 
-but be sure to update the URLs in the  MainActivity.java file.
+but be sure to update the URLs in the MainActivity.java file.
+
+If you wish to train and or fine tune the model, see the interactive notebook 
+in the training folder. You can copy and run the FOODTRAINER.ipynb in Google Colab
+for free. 
 
 ## Future Improvements 
 

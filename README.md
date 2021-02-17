@@ -2,6 +2,8 @@
 
 ## Overview 
 
+![](appdemo.gif)
+
 This android app classifies food into one of 101 categories using a cloud compute architecture.
 
 The purpose is to classify different foods in real world settings. 

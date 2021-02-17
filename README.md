@@ -1,9 +1,10 @@
+<img src="logo.jpg" align="right" height=125 width=125>
+
 # Food Classifier 
 
 ## Overview 
 
 <img src="appdemo.gif" align="right">
-
 
 This android app classifies food into one of 101 categories using a cloud compute architecture.
 

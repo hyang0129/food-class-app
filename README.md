@@ -2,6 +2,9 @@
 
 ## Overview 
 
+<img src="appdemo.gif">
+
+
 ![](appdemo.gif)
 
 This android app classifies food into one of 101 categories using a cloud compute architecture.
@@ -60,6 +63,13 @@ smoothing https://arxiv.org/pdf/1701.06548.pdf was used. Focal loss was
 chosen over cross entropy in order to increase the impact of hard to classify
 examples, even though its primary use is for class imbalance https://arxiv.org/abs/1708.02002.
 
+#### Out of Classes Images 
+
+Currently, the classifier is limited to 100 classes, which means that 
+there are many foods that are not included. For any photo that does not
+contain one of the 100 classes, the classifier will classify the result
+into one of the 100 classes. There is currently no null class. 
+
 ### Server Component 
 
 Priority: Low Cost, Quick Scaling 
@@ -79,15 +89,20 @@ Android was chosen over iOS due to ease of development and access to android dev
 In order to deploy the server component, you will need your own Google Cloud 
 project and some understanding of the App Engine and Cloud Storage services. 
 The follow steps assume that the user has familiarity with those to services. 
+If you are new to Google App Engine, I recommend going through the python 3 
+tutorial.  
 
 1. Upload your model files (h5 or tflite format) to your GCS bucket. 
 2. Update the main.py file to point towards your model file. 
-3. Use gcloud app deploy. 
+3. Use gcloud app deploy command via the terminal. 
 
 For the android app component, follow the standard steps for a gradle build, 
 but be sure to update the URLs in the  MainActivity.java file.
 
 ## Future Improvements 
+
+
+### Increased Classes 
 
 If more time and resources were available, it would be possible to improve 
 the number of foods for classification through one of two ways. 
@@ -116,7 +131,42 @@ servers even if the mobile device could perform inference. The necessity is brou
 the need for the KNN search of the embeddings. It is unrealistic for a mobile
 device to store the embeddings of hundreds of thousands of food photos. 
 
+### Null Class 
 
+When a photo is taken of a non food object, the classifier still attempts
+to classify it as a food. This can be addressed by adding a new class 
+to represent non food and then train the model with this new class. However, 
+the variety of non food objects is even greater than the variety of food
+objects. There are three potential approaches. 
+
+1. Implement a multi-class approach. This is the most simple as you 
+would only need to add another class. However, this can cause problems
+during training in terms of the class imbalance. Should non food classes
+account for 1%, 10%, or 50% of the training samples? This approach may 
+reduce the overall classification accuracy of food classes. 
+
+2. Implement a multi-label approach. This requires two separate outputs.
+One represents the original food classes via softmax cross entropy. The 
+second is a sigmoid binary cross entropy between is food and not food. 
+During training, in examples without any food, there should be no loss
+for the softmax cross entropy. This can be implemented by multiplying the 
+softmax cross entropy loss per example by the is food label. This approach
+should yield better results than the multi-class approach and allows
+for easy calibration of the is food threshold because the model outputs
+a probability that a image contains a food class. 
+
+3. Implement an object localization and/or segmentation pipeline. This 
+can be accomplished via Mask RCNN or similar model. This approach 
+is likely to yield the best performance, but it requires bounding boxes
+or segmentation maps for the data. This approach makes it more difficult
+to scrape images from the web (eg. a simple Google search of boiled eggs
+will return a large number of images without masks). For web scraping, 
+it may be necessary to utilize unsupervised or semi supervised 
+learning methods such as pseudo-labeling. 
+
+
+
+ 
 
 
 

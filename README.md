@@ -104,7 +104,11 @@ but be sure to update the URLs in the MainActivity.java file.
 
 If you wish to train and or fine tune the model, see the interactive notebook 
 in the training folder. You can copy and run the FOODTRAINER.ipynb in Google Colab
-for free. 
+in your web browser with a TPU for free. Be sure to change the model save path to './models/'
+to save the models in the Colab instance. If you wish to train the model 
+using a Jupyter environment outside of Colab, you will need to allocate the correct
+TPU or GPU resource and ensure that the packages are installed correctly. 
+
 
 ## Future Improvements 
 

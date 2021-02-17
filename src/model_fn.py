@@ -4,20 +4,20 @@ import tensorflow as tf
 from google.cloud import storage
 
 import efficientnet.tfkeras as efn
-from src.class_names import class_names
+from src.class_names import CLASS_NAMES
 
 
-def get_model(MODEL_BUCKET, MODEL_FILENAME):
+def get_model(model_bucket, model_filename):
 
     logger.debug('loading model')
 
     try:
 
-        if MODEL_BUCKET is None:
+        if model_bucket is None:
 
-            MODEL = efn.EfficientNetB3(input_shape=(256, 256, 3),
-                                                         weights=None,
-                                                         classes=101)
+            model = efn.EfficientNetB3(input_shape=(256, 256, 3),
+                                       weights=None,
+                                       classes=101)
 
             logger.debug('loaded dummy model')
         else:
@@ -25,11 +25,11 @@ def get_model(MODEL_BUCKET, MODEL_FILENAME):
 
             logger.debug('downloading model file')
             client = storage.Client.create_anonymous_client()
-            bucket = client.get_bucket(MODEL_BUCKET)
-            blob = bucket.get_blob(MODEL_FILENAME)
+            bucket = client.get_bucket(model_bucket)
+            blob = bucket.get_blob(model_filename)
 
 
-            if '.h5' in MODEL_FILENAME:
+            if '.h5' in model_filename:
                 try:
                     path = '/tmp/model.h5'
                     blob.download_to_filename(path)
@@ -38,9 +38,9 @@ def get_model(MODEL_BUCKET, MODEL_FILENAME):
                     blob.download_to_filename(path)
 
                 logger.debug('loading model')
-                MODEL = tf.keras.models.load_model(path, compile=False)
+                model = tf.keras.models.load_model(path, compile=False)
 
-            elif '.tflite' in MODEL_FILENAME:
+            elif '.tflite' in model_filename:
                 try:
                     path = '/tmp/model.tflite'
                     blob.download_to_filename(path)
@@ -53,15 +53,15 @@ def get_model(MODEL_BUCKET, MODEL_FILENAME):
                 interpreter = tf.lite.Interpreter(model_path=path)
                 interpreter.allocate_tensors()
 
-                MODEL = interpreter
+                model = interpreter
 
     except:
 
         raise
 
-    return MODEL
+    return model
 
-def predict_image(MODEL, jpegbytes):
+def predict_image(model, jpegbytes):
 
     try:
         logger.debug('preparing data for prediction')
@@ -76,23 +76,23 @@ def predict_image(MODEL, jpegbytes):
 
         logger.debug('predicting on prepared data')
 
-        if MODEL.__class__ == tf.lite.Interpreter:
-            input_index = MODEL.get_input_details()[0]["index"]
-            output_index = MODEL.get_output_details()[0]["index"]
+        if model.__class__ == tf.lite.Interpreter:
+            input_index = model.get_input_details()[0]["index"]
+            output_index = model.get_output_details()[0]["index"]
 
-            MODEL.set_tensor(input_index, image)
-            MODEL.invoke()
-            pred = MODEL.get_tensor(output_index)
+            model.set_tensor(input_index, image)
+            model.invoke()
+            pred = model.get_tensor(output_index)
 
         else:
-            pred = MODEL.predict(image)
+            pred = model.predict(image)
             try:
                 pred = pred['label']
             except:
                 pass
 
         label_id = tf.argmax(pred, axis=-1).numpy()[0]
-        label = class_names[label_id]
+        label = CLASS_NAMES[label_id]
 
         logger.debug('returning prediction')
     except:

@@ -1,5 +1,3 @@
-# Copyright 2018 Google LLC
-#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -44,18 +42,16 @@ except DefaultCredentialsError:
                diagnose=True,)
 
 
-MODEL_BUCKET = 'kaggledata2'
-
-# MODEL_FILENAME = 'foodclass/model.h5'
-MODEL_FILENAME = 'foodclass/fp16.tflite'
-MODEL = None
+model_bucket = 'kaggledata2'
+model_filename = 'foodclass/fp16.tflite'
+model = None
 
 app = Flask(__name__)
 
 @app.before_first_request
 def _load_model():
-    global MODEL
-    MODEL = get_model(MODEL_BUCKET, MODEL_FILENAME)
+    global model
+    model = get_model(model_bucket, model_filename)
     logger.debug('successfully loaded model')
 
 @app.route('/')
@@ -65,18 +61,18 @@ def root():
 
 @app.route('/check_model', methods=['GET'])
 def index():
-    global MODEL
-    return str(MODEL.name), 200
+    global model
+    return str(model.name), 200
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    global MODEL
+    global model
     logger.debug('receiving prediction request')
     jpegbytes = request.get_json()['image_bytes']
 
     jpegbytes = base64.b64decode(jpegbytes)
     print(jpegbytes[:5])
-    label = predict_image(MODEL, jpegbytes)
+    label = predict_image(model, jpegbytes)
     return jsonify({'label': label}), 200
     # return label, 200
 
@@ -98,5 +94,4 @@ if __name__ == '__main__':
     # http://flask.pocoo.org/docs/1.0/quickstart/#static-files. Once deployed,
     # App Engine itself will serve those files as configured in app.yaml.
     app.run(host='127.0.0.1', port=8080, debug=True)
-# [END gae_python3_render_template]
-# [END gae_python38_render_template]
+
